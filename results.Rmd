@@ -1,0 +1,398 @@
+---
+title: "results"
+author: "Raphaël Powis"
+date: "2024-08-19"
+output: html_document
+---
+
+#sample size
+
+##% incomplete data
+##incomplete days
+```{r}
+1-sum(tar_read(per_box_day)$duration)/sum(tar_read(per_box_day_tr0)$duration)
+```
+
+##incomplete phase
+```{r}
+per_box_phase <- tar_read(per_box_phase)
+per_box_phase$breeding_attempt <- paste(per_box_phase$year,per_box_phase$box)
+pr <- filter(per_box_phase,phase == "Provisioning")
+length(unique(pr)$breeding_attempt) - length(unique(filter(pr,enough_prospect_data))$breeding_attempt)
+
+pr <- filter(per_box_phase,phase == "Incubation")
+length(unique(pr)$breeding_attempt) - length(unique(filter(pr,enough_prospect_data))$breeding_attempt)
+
+pr <- filter(pr,phase == "Fledge")
+length(unique(pr)$breeding_attempt) - length(unique(filter(pr,enough_prospect_data))$breeding_attempt)
+
+```
+##general descriptive results
+
+```{r}
+duration <- tar_read(duration)
+sum((duration)$total_duration,na.rm = T)*24
+sum(filter(duration, year(first_read) == 2023)$total_duration,na.rm = T)*24
+sum(filter(duration, year(first_read) == 2022)$total_duration,na.rm = T)*24
+visits <- tar_read(visits)
+length(unique(visits$box))
+nrow(filter(visits,age > 1))
+nrow(filter(visits,age > 1 & year == 2023))
+nrow(filter(visits,age > 1 & year == 2022))
+length(unique(filter(visits,age > 1)$JID))
+nrow(filter(visits,age > 1 & visitor_type == "P"))
+
+pbd <- tar_read(per_box_day)
+mean(pbd$prospect_visits)
+sd(pbd$prospect_visits)
+mean(pbd$n_visitors)
+sd(pbd$n_visitors)
+
+pbirdd <- tar_read(per_bird_day)
+mean(pbirdd$prospect_visits)
+sd(pbirdd$prospect_visits)
+
+mean(filter(visits,distance < 1000)$distance,na.rm = T)
+sd(filter(visits,distance < 1000)$distance,na.rm= T)
+nrow(filter(visits,distance >= 1000))
+```
+
+
+# Individual characteristics of all prospectors
+
+## all phases
+
+```{r}
+model <- tar_read(indiv_model)
+summary(model)
+simulationOutput1 <- simulateResiduals(fittedModel = model, plot = T, seed = 1)
+```
+
+without thresholds
+
+```{r}
+model <- tar_read(indiv_model_tr0)
+summary(model)
+simulationOutput1 <- simulateResiduals(fittedModel = model, plot = T, seed = 1)
+testOutliers(simulationOutput1,type = "bootstrap")
+```
+
+
+## incubation
+
+
+```{r}
+model <- tar_read(indiv_model_incub)
+summary(model)
+simulationOutput1 <- simulateResiduals(fittedModel = model, plot = T, seed = 1)
+```
+
+without thresholds
+
+```{r}
+model <- tar_read(indiv_model_incub_tr0)
+summary(model)
+simulationOutput1 <- simulateResiduals(fittedModel = model, plot = T, seed = 1)
+```
+
+## provisioning
+
+
+```{r}
+model <- tar_read(indiv_model_prov)
+summary(model)
+simulationOutput1 <- simulateResiduals(fittedModel = model, plot = T, seed = 1)
+testDispersion(simulationOutput1)
+```
+
+without thresholds
+
+```{r}
+model <- tar_read(indiv_model_prov_tr0)
+summary(model)
+simulationOutput1 <- simulateResiduals(fittedModel = model, plot = T, seed = 1)
+testDispersion(simulationOutput1)
+```
+
+
+## post-fledgling
+
+
+```{r}
+model <- tar_read(indiv_model_pf)
+summary(model)
+simulationOutput1 <- simulateResiduals(fittedModel = model, plot = T, seed = 1)
+testDispersion(simulationOutput1)
+```
+
+without thresholds
+
+```{r}
+model <- tar_read(indiv_model_pf_tr0)
+summary(model)
+simulationOutput1 <- simulateResiduals(fittedModel = model, plot = T, seed = 1)
+testDispersion(simulationOutput1)
+```
+
+# trade-off parental activity-prospecting
+
+
+```{r}
+model <- tar_read(parental_model)
+summary(model)
+simulationOutput1 <- simulateResiduals(fittedModel = model, plot = T, seed = 1)
+```
+
+without thresholds
+
+```{r}
+model <- tar_read(parental_model_tr0)
+summary(model)
+simulationOutput1 <- simulateResiduals(fittedModel = model, plot = T, seed = 1)
+```
+
+# effect of prospecting on breeding success
+
+
+```{r}
+model <- tar_read(fitness_model)
+summary(model)
+simulationOutput1 <- simulateResiduals(fittedModel = model, plot = T, seed = 1)
+```
+
+
+without thresholds
+```{r}
+model <- tar_read(fitness_model_tr0)
+summary(model)
+simulationOutput1 <- simulateResiduals(fittedModel = model, plot = T, seed = 1)
+```
+
+# effect of breeding failure on individual prospecting effort
+
+
+```{r}
+model <- tar_read(bird_failure_model)
+summary(model)
+plot(tar_read(bird_failure_sim))
+print(tar_read(bird_failure_tukey))
+plot(tar_read(fig_failure_bird))
+print(tar_read(failure_outlier_test))
+data <- tar_read(bird_failure_data)
+failed <- filter(data,fledglings == 0)
+success <- filter(data,fledglings > 0)
+print(length(unique(paste(failed$year,failed$JID))))
+print(length(unique(paste(success$year,success$JID))))
+print(length(unique(failed$JID)))
+print(length(unique(success$JID)))
+```
+
+
+without thresholds
+```{r}
+model <- tar_read(bird_failure_model_tr0)
+summary(model)
+plot(tar_read(bird_failure_sim_tr0))
+```
+
+# Box level
+
+## phase comparison
+
+```{r}
+model <- tar_read(phase_comparison_model)
+summary(model)
+plot(tar_read(phase_comp_sim))
+print(tar_read(phase_comp_tukey))
+print(tar_read(phase_comp_fig))
+
+```
+
+without thresholds
+
+```{r}
+model <- tar_read(phase_comparison_model_tr0)
+summary(model)
+plot(tar_read(phase_comp_sim_tr0))
+```
+
+
+## day by day evolution
+
+
+```{r}
+model <- tar_read(day_day_model)
+summary(model)
+plot(tar_read(day_day_sim))
+print(tar_read(day_day_plot))
+plot(tar_read(day_day_plot))
+
+```
+
+without thresholds
+
+```{r}
+model <- tar_read(day_day_model_tr0)
+summary(model)
+plot(tar_read(day_day_sim_tr0))
+```
+
+
+##corelation between parental activity and median chick number
+
+```{r}
+print(tar_read(colin))
+```
+
+
+## effect of parental activity on nestbox attractivness
+
+
+```{r}
+model <- tar_read(parental_only_model)
+summary(model)
+plot(tar_read(parental_only_sim))
+print(tar_read(parental_plot))
+
+```
+
+without thresholds
+
+```{r}
+model <- tar_read(parental_only_model_tr0)
+summary(model)
+plot(tar_read(parental_only_sim_tr0))
+
+```
+
+## effect of median chick number on nestbox attractivness
+
+
+```{r}
+model <- tar_read(chick_only_model)
+summary(model)
+plot(tar_read(chick_only_sim))
+print(tar_read(chick_plot))
+
+```
+
+without thresholds
+
+```{r}
+model <- tar_read(chick_only_model_tr0)
+summary(model)
+plot(tar_read(chick_only_sim_tr0))
+
+```
+
+## parental activity and chick number in one combined model
+
+
+
+```{r}
+model <- tar_read(chick_parental_model)
+summary(model)
+plot(tar_read(chick_parental_sim))
+
+
+```
+
+without thresholds
+
+```{r}
+model <- tar_read(chick_parental_model_tr0)
+summary(model)
+plot(tar_read(chick_parental_sim_tr0))
+
+```
+
+
+## effect of breeding failure on nestbox attractivness
+
+### all periods combined
+
+
+```{r}
+model <- tar_read(box_failure_model)
+summary(model)
+plot(tar_read(box_failure_sim))
+data <- tar_read(box_failure_data)
+failed <- filter(data,fledglings == 0)
+success <- filter(data,fledglings > 0)
+print(length(unique(paste(failed$year,failed$box))))
+print(length(unique(paste(success$year,success$box))))
+print(length(unique(failed$JID)))
+print(length(unique(success$JID)))
+
+```
+
+without thresholds
+
+
+
+```{r}
+model <- tar_read(box_failure_model_tr0)
+summary(model)
+plot(tar_read(box_failure_sim_tr0))
+
+
+```
+
+### only pre-fledge
+
+
+
+
+```{r}
+model <- tar_read(box_failure_preFledge_model)
+summary(model)
+plot(tar_read(failure_preFledge_sim))
+print(tar_read(failure_preFledge_tukey))
+
+```
+
+without thresholds
+
+```{r}
+model <- tar_read(box_failure_preFledge_model_tr0)
+summary(model)
+plot(tar_read(failure_preFledge_sim_tr0))
+print(tar_read(failure_preFledge_tukey_tr0))
+
+```
+
+### only post-fledge
+
+
+
+
+```{r}
+model <- tar_read(box_failure_fledge_model)
+summary(model)
+plot(tar_read(failure_fledge_sim))
+print(tar_read(failure_fledge_tukey))
+
+
+```
+
+without thresholds
+
+```{r}
+model <- tar_read(box_failure_fledge_model_tr0)
+summary(model)
+plot(tar_read(failure_fledge_sim_tr0))
+print(tar_read(failure_fledge_tukey_tr0))
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
